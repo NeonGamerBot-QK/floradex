@@ -3,7 +3,7 @@
 services:
   postgres:
     image: postgres:16
-    container_name: psql_server
+    container_name: psql_server_htn
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
