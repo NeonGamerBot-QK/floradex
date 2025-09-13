@@ -9,11 +9,7 @@ export default function Index() {
         alignItems: "center",
       }}
     >
-      <Text
-        style={{
-
-           }}
-        >floradex!!!</Text>
+      <Text style={{}}>floradex!!!</Text>
     </View>
   );
 }
