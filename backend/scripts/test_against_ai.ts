@@ -16,7 +16,18 @@ const response = await ai.chat.completions.create({
       content: [
         {
           type: "text",
-          text: "Identify the plant in this image.please provide specifics data about it.",
+          text: "Identify the plant in this image." +
+              "Provide the most likely name of the plant as well as its scientific name." +
+              "Give your answer in the following format:" +
+              "{" +
+              "name: <\name\>," +
+              "scientific_name: <\scientific_name\>," +
+              "areas_commonly_found_in: <\areas_commonly_found_in\>," +
+              "fun_fact_about_this_plant" +
+              "}." +
+              "Do not provide any other information apart from anything within the JSON." +
+              "Use as few tokens as possible." +
+              "Keep answer as short as possible, but detailed enough to still have all of the information requested.",
         },
         {
           type: "image_url",
