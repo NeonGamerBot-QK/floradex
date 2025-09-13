@@ -8,14 +8,20 @@ export default function Home() {
         <div
           className={"text-9xl p-5 mt-32 text-background rounded-xl rotate-2"}
         >
-          <img src="/floradex.svg" alt={"floradex logo"} draggable={false} className={"animate-bounce"}/>
+          <img
+            src="/floradex.svg"
+            alt={"floradex logo"}
+            draggable={false}
+            className={"animate-bounce"}
+          />
         </div>
         <div className={"flex flex-row gap-4"}>
-            <Link
-                className={"p-5 rounded-xl text-xl bg-mindaro text-space-cadet"}
-                href={"/login"}>
-                Login
-            </Link>
+          <Link
+            className={"p-5 rounded-xl text-xl bg-mindaro text-space-cadet"}
+            href={"/login"}
+          >
+            Login
+          </Link>
         </div>
       </div>
     </div>
