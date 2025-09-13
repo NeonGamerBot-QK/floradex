@@ -9,7 +9,10 @@ export default function Home() {
             "text-9xl p-5 mt-32 text-background rounded-xl rotate-2"
           }
         >
-         <img src="/floradex.svg"/>
+         <img 
+            src="/floradex.svg"
+            width={500}
+            />
         </div>
         <div></div>
       </div>
