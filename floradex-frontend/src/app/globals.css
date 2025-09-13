@@ -21,11 +21,11 @@
   --font-sans: var(--font-jua);
    */
 
-  --space-cadet: #3d315b;
-  --yinmin-blue: #444b6e;
-  --reseda-green: #708b75;
-  --olivine: #9ab87a;
-  --mindaro: #f8f991;
+  --color-space-cadet: #3d315b;
+  --color-yinmin-blue: #444b6e;
+  --color-reseda-green: #708b75;
+  --color-olivine: #9ab87a;
+  --color-mindaro: #f8f991;
 
   /*--font-mono: var(--font-geist-mono);*/
 }
