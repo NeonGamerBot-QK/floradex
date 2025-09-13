@@ -3,10 +3,10 @@ import { Jua } from "next/font/google";
 import "./globals.css";
 
 const jua = Jua({
-    weight: "400",
-    variable: "--font-jua",
-    subsets: ["latin"]
-})
+  weight: "400",
+  variable: "--font-jua",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -20,11 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${jua.className} antialiased`}
-      >
-        {children}
-      </body>
+      <body className={`${jua.className} antialiased`}>{children}</body>
     </html>
   );
 }
