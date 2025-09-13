@@ -12,20 +12,20 @@
   --mindaro: #f8f991;
 }
 
-@theme inline {
+@theme {
   /*
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-   */
   --color-background: var(--reseda-green);
   --color-foreground: var(--mindaro);
   --font-sans: var(--font-jua);
+   */
 
-  --space-cadet: #3d315b;
-  --yinmin-blue: #444b6e;
-  --reseda-green: #708b75;
-  --olivine: #9ab87a;
-  --mindaro: #f8f991;
+  --color-space-cadet: #3d315b;
+  --color-yinmin-blue: #444b6e;
+  --color-reseda-green: #708b75;
+  --color-olivine: #9ab87a;
+  --color-mindaro: #f8f991;
 
   /*--font-mono: var(--font-geist-mono);*/
 }
