@@ -8,5 +8,9 @@
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "jose": "^6.1.0",
+    "zod": "^4.1.8"
   }
 }
