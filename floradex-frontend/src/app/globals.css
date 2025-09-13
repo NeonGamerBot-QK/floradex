@@ -12,14 +12,14 @@
   --mindaro: #f8f991;
 }
 
-@theme inline {
+@theme {
   /*
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-   */
   --color-background: var(--reseda-green);
   --color-foreground: var(--mindaro);
   --font-sans: var(--font-jua);
+   */
 
   --space-cadet: #3d315b;
   --yinmin-blue: #444b6e;
