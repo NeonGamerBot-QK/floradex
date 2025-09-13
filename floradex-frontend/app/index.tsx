@@ -63,7 +63,10 @@ export default function Index() {
         >
           Login
         </Text>
-  <Button title="Go to Second Screen" onPress={() => router.push("/SecondScreen")}/>
+        <Button
+          title="Go to Second Screen"
+          onPress={() => router.push("/SecondScreen")}
+        />
       </View>
     </View>
   );
