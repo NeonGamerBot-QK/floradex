@@ -1,7 +1,9 @@
-import { Text, View, StyleSheet } from "react-native";
+import { Text, View, StyleSheet, Button } from "react-native";
+import { useRouter } from "expo-router";
 import { useFonts, Jua_400Regular } from "@expo-google-fonts/jua";
 
 export default function Index() {
+  const router = useRouter();
   console.log(Jua_400Regular);
 
   let [fontsLoaded] = useFonts({
@@ -61,6 +63,10 @@ export default function Index() {
         >
           Login
         </Text>
+        <Button
+          title="Go to Second Screen"
+          onPress={() => router.push("/SecondScreen")}
+        />
       </View>
     </View>
   );

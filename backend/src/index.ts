@@ -96,13 +96,19 @@ app.post("/login", async (req, res) => {
     return new Response("Invalid email or password", { status: 400 });
   }
   const passwordHash = user[0].password_hash;
-  if (!Bun.password.verify(password, passwordHash)) {
+  if (!(await Bun.password.verify(password, passwordHash))) {
     return new Response("Invalid email or password", { status: 401 });
   }
   console.log(user);
   createAuditLog(`UserLogin`, { email }, user[0].id.toString());
   const token = await generateToken({ email });
-  return new Response(JSON.stringify({ token }), { status: 200 });
+  return new Response(JSON.stringify({ token }), {
+    status: 200,
+    headers: {
+      "Set-Cookie": `jwt=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=172800`,
+      "Content-Type": "application/json",
+    },
+  });
 });
 
 app.get("/my-db-info", async (req, res) => {
@@ -288,3 +294,4 @@ app.listen(process.env.PORT || 3000);
 console.log(`Server running on http://localhost:3000`);
 // audit log ts
 createAuditLog(`ServerStarted`, { starting_date: new Date().toISOString() });
+//ts pmo
