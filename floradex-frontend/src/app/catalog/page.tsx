@@ -8,6 +8,12 @@ const images = [
   "/sample.jpg",
   "/sample.jpg",
   "/sample.jpg",
+  "/sample.jpg",
+  "/sample.jpg",
+  "/sample.jpg",
+  "/sample.jpg",
+  "/sample.jpg",
+  "/sample.jpg",
 ];
 
 export default function Upload() {
