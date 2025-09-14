@@ -40,6 +40,5 @@ export default function File() {
       </div>
     </div>
     </div>
-    </div>
   );
 }
