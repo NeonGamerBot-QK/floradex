@@ -1,6 +1,5 @@
 "use client";
 
-import { cookies } from "next/headers";
 import { useState } from "react";
 import Link from "next/link";
 
@@ -55,9 +54,16 @@ export default function RegisterPage() {
   }
 
   return (
-    <div>
-      <form>
-        <input
+    <div className="bg-olivine m-20 ml-100 mr-100 rounded-xl p-5">
+      <div className="justify-self-center p-5">
+        <img src="/floradex.svg"
+          width={500}> 
+        </img>
+      </div>
+      <form className="pt-5">
+        <div className={"justify-self-center pb-5"}>
+          <p className={"text-xl"}>Email</p>
+          <input className="bg-white rounded text-space-cadet"
           type={"email"}
           name={"email"}
           onChange={(e) =>
@@ -65,7 +71,10 @@ export default function RegisterPage() {
           }
           required
         />
-        <input
+        </div>
+        <div className={"justify-self-center"}>
+          <p className={"text-xl"}>Password</p>
+           <input className="bg-white rounded text-space cadet"
           type={"password"}
           name={"password"}
           onChange={(e) =>
@@ -76,7 +85,10 @@ export default function RegisterPage() {
           }
           required
         />
-        <input type={"submit"} />
+        <div className="justify-self-center bg-space-cadet m-10 px-2 rounded">
+          <input type={"submit"} />
+        </div>
+        </div>
       </form>
     </div>
   );
