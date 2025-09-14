@@ -6,30 +6,30 @@ import OpenAI from "openai";
 
 const env = process.env;
 const registerAndLoginBody = z.object({
-  email: z.email().max(100),
-  password: z.string().min(4).max(100),
+    email: z.email().max(100),
+    password: z.string().min(4).max(100),
 });
 
 const ai = new OpenAI({
-  apiKey: env.OPENAI_API_KEY,
+    apiKey: env.OPENAI_API_KEY,
 });
 
 // simple http server
 const app = new App();
 const db = new SQL({
-  url: process.env.DATABASE_URL!,
+    url: process.env.DATABASE_URL!,
 });
 
 const createAuditLog = (action: string, metadata?: any, uid?: string) => {
-  return db`INSERT INTO audit_log (action, metadata, user_id) VALUES (${action}, ${metadata ? JSON.stringify(metadata) : null}, ${uid ? uid : null})`.catch(
-    (e) => {
-      console.error("Failed to create audit log:", e);
-    },
-  );
+    return db`INSERT INTO audit_log (action, metadata, user_id) VALUES (${action}, ${metadata ? JSON.stringify(metadata) : null}, ${uid ? uid : null})`.catch(
+        (e) => {
+            console.error("Failed to create audit log:", e);
+        },
+    );
 };
 app.use(async (req, next) => {
-  console.log(`${req.method} ${new URL(req.url).pathname}`);
-  return next();
+    console.log(`${req.method} ${new URL(req.url).pathname}`);
+    return next();
 });
 
 app.get("/", () => new Response("Hello Bun!"));
@@ -45,114 +45,114 @@ const sanitizeInput = (t: string) => t.replace(/['"]/g, "");
 
 // 🔑 Generate JWT
 async function generateToken(payload: object) {
-  //@ts-ignore
-  return await new SignJWT(payload)
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime(JWT_EXPIRY)
-    .sign(JWT_SECRET);
+    //@ts-ignore
+    return await new SignJWT(payload)
+        .setProtectedHeader({ alg: "HS256" })
+        .setIssuedAt()
+        .setExpirationTime(JWT_EXPIRY)
+        .sign(JWT_SECRET);
 }
 
 // 🔑 Verify JWT
 async function verifyToken(token: string) {
-  try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    return payload;
-  } catch {
-    return null;
-  }
+    try {
+        const { payload } = await jwtVerify(token, JWT_SECRET);
+        return payload;
+    } catch {
+        return null;
+    }
 }
 
 app.post("/register", async (req, res) => {
-  const body = await req.json();
-  const parsed = registerAndLoginBody.safeParse(body);
-  if (!parsed.success) {
-    return new Response(JSON.stringify(parsed.error.format()), { status: 400 });
-  }
-  const { email, password } = parsed.data;
-  const passwordHash = Bun.password.hashSync(password);
-  let uv = null;
-  try {
-    uv =
-      await db`INSERT INTO users (email, password_hash) VALUES (${sanitizeInput(email)}, ${passwordHash})`;
-  } catch (e) {
-    console.error(e);
-    return new Response("User already exists", { status: 400 });
-  }
-  createAuditLog(`UserRegistration`, { email }, undefined);
-  const token = await generateToken({ email });
-  return new Response(JSON.stringify({ token }), { status: 201 });
+    const body = await req.json();
+    const parsed = registerAndLoginBody.safeParse(body);
+    if (!parsed.success) {
+        return new Response(JSON.stringify(parsed.error.format()), { status: 400 });
+    }
+    const { email, password } = parsed.data;
+    const passwordHash = Bun.password.hashSync(password);
+    let uv = null;
+    try {
+        uv =
+            await db`INSERT INTO users (email, password_hash) VALUES (${sanitizeInput(email)}, ${passwordHash})`;
+    } catch (e) {
+        console.error(e);
+        return new Response("User already exists", { status: 400 });
+    }
+    createAuditLog(`UserRegistration`, { email }, undefined);
+    const token = await generateToken({ email });
+    return new Response(JSON.stringify({ token }), { status: 201 });
 });
 app.post("/login", async (req, res) => {
-  const body = await req.json();
-  const parsed = registerAndLoginBody.safeParse(body);
-  if (!parsed.success) {
-    return new Response(JSON.stringify(parsed.error.format()), { status: 400 });
-  }
-  const { email, password } = parsed.data;
-  const user =
-    await db`SELECT * FROM users WHERE email = ${sanitizeInput(email)}`;
-  if (user.length === 0) {
-    return new Response("Invalid email or password", { status: 400 });
-  }
-  const passwordHash = user[0].password_hash;
-  if (!Bun.password.verify(password, passwordHash)) {
-    return new Response("Invalid email or password", { status: 401 });
-  }
-  console.log(user);
-  createAuditLog(`UserLogin`, { email }, user[0].id.toString());
-  const token = await generateToken({ email });
-  return new Response(JSON.stringify({ token }), { status: 200 });
+    const body = await req.json();
+    const parsed = registerAndLoginBody.safeParse(body);
+    if (!parsed.success) {
+        return new Response(JSON.stringify(parsed.error.format()), { status: 400 });
+    }
+    const { email, password } = parsed.data;
+    const user =
+        await db`SELECT * FROM users WHERE email = ${sanitizeInput(email)}`;
+    if (user.length === 0) {
+        return new Response("Invalid email or password", { status: 400 });
+    }
+    const passwordHash = user[0].password_hash;
+    if (!Bun.password.verify(password, passwordHash)) {
+        return new Response("Invalid email or password", { status: 401 });
+    }
+    console.log(user);
+    createAuditLog(`UserLogin`, { email }, user[0].id.toString());
+    const token = await generateToken({ email });
+    return new Response(JSON.stringify({ token }), { status: 200 });
 });
 
 app.get("/my-db-info", async (req, res) => {
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-  const token = authHeader.split(" ")[1];
-  if (!token) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-  const payload = await verifyToken(token!);
-  if (!payload) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-  const email = payload.email as string;
-  const user =
-    await db`SELECT id, email, created_at FROM users WHERE email = ${sanitizeInput(email)}`;
-  if (user.length === 0) {
-    return new Response("User not found", { status: 404 });
-  }
-  return new Response(JSON.stringify(user[0]), { status: 200 });
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return new Response("Unauthorized", { status: 401 });
+    }
+    const token = authHeader.split(" ")[1];
+    if (!token) {
+        return new Response("Unauthorized", { status: 401 });
+    }
+    const payload = await verifyToken(token!);
+    if (!payload) {
+        return new Response("Unauthorized", { status: 401 });
+    }
+    const email = payload.email as string;
+    const user =
+        await db`SELECT id, email, created_at FROM users WHERE email = ${sanitizeInput(email)}`;
+    if (user.length === 0) {
+        return new Response("User not found", { status: 404 });
+    }
+    return new Response(JSON.stringify(user[0]), { status: 200 });
 });
 app.get("/health", async () => {
-  await db`SELECT 1`;
-  return new Response("200");
+    await db`SELECT 1`;
+    return new Response("200");
 });
 app.get("/admin/audit-logs", async (req) => {
-  const queryParams = new URL(req.url).searchParams;
-  const aq = queryParams.get("auth_query");
-  if (!aq || (aq && aq !== env.ADMIN_AUTH_QUERY)) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+    const queryParams = new URL(req.url).searchParams;
+    const aq = queryParams.get("auth_query");
+    if (!aq || (aq && aq !== env.ADMIN_AUTH_QUERY)) {
+        return new Response("Unauthorized", { status: 401 });
+    }
 
-  const limit = queryParams.get("limit")
-    ? parseInt(queryParams.get("limit")!)
-    : 50;
-  const offset = queryParams.get("offset")
-    ? parseInt(queryParams.get("offset")!)
-    : 0;
+    const limit = queryParams.get("limit")
+        ? parseInt(queryParams.get("limit")!)
+        : 50;
+    const offset = queryParams.get("offset")
+        ? parseInt(queryParams.get("offset")!)
+        : 0;
 
-  const logs = await db`
+    const logs = await db`
         SELECT * FROM audit_log
         LIMIT ${limit}
         OFFSET ${offset}
     `;
 
-  const rows = logs
-    .map(
-      (log) => `
+    const rows = logs
+        .map(
+            (log) => `
         <tr>
             <td>${log.id}</td>
             <td>${log.action}</td>
@@ -160,13 +160,13 @@ app.get("/admin/audit-logs", async (req) => {
             <td>${log.created_at}</td>
         </tr>
     `,
-    )
-    .join("");
+        )
+        .join("");
 
-  const prevOffset = Math.max(offset - limit, 0);
-  const nextOffset = offset + limit;
+    const prevOffset = Math.max(offset - limit, 0);
+    const nextOffset = offset + limit;
 
-  const html = `
+    const html = `
     <!DOCTYPE html>
     <html>
     <head>
@@ -206,46 +206,84 @@ app.get("/admin/audit-logs", async (req) => {
     </html>
     `;
 
-  return new Response(html, {
-    headers: { "Content-Type": "text/html" },
-  });
+    return new Response(html, {
+        headers: { "Content-Type": "text/html" },
+    });
 });
 
 app.post("/plantai", async (req) => {
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-  const token = authHeader.split(" ")[1];
-  if (!token) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-  const payload = await verifyToken(token!);
-  if (!payload) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-  const imageBase64 = await req.text();
-  const response = await ai.chat.completions.create({
-    model: "gpt-5",
-    messages: [
-      {
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text: "Identify the plant in this image.please provide specifics data about it.",
-          },
-          {
-            type: "image_url",
-            image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
-          },
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return new Response("Unauthorized", { status: 401 });
+    }
+    const token = authHeader.split(" ")[1];
+    if (!token) {
+        return new Response("Unauthorized", { status: 401 });
+    }
+    const payload = await verifyToken(token!);
+    if (!payload) {
+        return new Response("Unauthorized", { status: 401 });
+    }
+    const user =
+        await db`SELECT id FROM users WHERE email = ${sanitizeInput(payload.email as string)}`;
+    if (user.length === 0) {
+        return new Response("User not found", { status: 404 });
+    }
+    const imageBase64 = await req.text();
+    const response = await ai.chat.completions.create({
+        model: "gpt-5",
+        messages: [
+            {
+                role: "user",
+                content: [
+                    {
+                        type: "text",
+                        text:
+                            "Identify the plant in this image." +
+                            "Provide the most likely name of the plant as well as its scientific name." +
+                            "Give your answer in the following format: (JSON)" +
+                            "{" +
+                            "name: <name>," +
+                            "scientific_name: <scientific_name>," +
+                            "areas_commonly_found_in: <areas_commonly_found_in>," +
+                            "fun_fact_about_this_plant" +
+                            "}." +
+                            "Do not provide any other information apart from anything within the JSON." +
+                            "Use as few tokens as possible." +
+                            "Keep answer as short as possible, but detailed enough to still have all of the information requested.",
+                    },
+                    {
+                        type: "image_url",
+                        image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
+                    },
+                ],
+            },
         ],
-      },
-    ],
-  });
-  createAuditLog("PlantAi");
-  return new Response(JSON.stringify(response.choices), { status: 200 });
-});
+    });
+    const json = JSON.parse(response.choices[0]!.message!.content!);
+    // add sql record
+    // await db`INSERT INTO plant_requests (user_id, request, response) VALUES (${user[0].id}, ${imageBase64}, ${JSON.stringify(json)})`;
+    await db`
+  INSERT INTO plant_requests (
+    user_id,
+    plant_type,
+    name,
+    scientific_name,
+    areas_commonly_found_in,
+    fun_fact_about_this_plant
+  ) VALUES (
+    ${user[0].id},
+    ${'tree'}, -- or whatever plant_type is
+    ${json.name},
+    ${json.scientific_name},
+    ${json.areas_commonly_found_in},
+    ${json.fun_fact_about_this_plant}
+  )
+`;
+
+    return new Response(JSON.stringify(json), { status: 200 })
+})
+
 
 app.listen(3000);
 console.log(`Server running on http://localhost:3000`);
