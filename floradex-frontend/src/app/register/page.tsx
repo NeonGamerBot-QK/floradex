@@ -89,7 +89,7 @@ export default function RegisterPage() {
             required
           />
           <div className="justify-self-center bg-space-cadet m-10 px-2 rounded">
-            <input type={"submit"}/>
+            <input type={"submit"} />
           </div>
         </div>
       </form>
