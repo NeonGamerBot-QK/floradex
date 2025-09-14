@@ -58,7 +58,7 @@ export default function RegisterPage() {
       <div className="justify-self-center p-5">
         <img src="/floradex.svg" width={500}></img>
       </div>
-      <form className="pt-5">
+      <form className="pt-5" onSubmit={onFormSubmit}>
         <div className={"justify-self-center pb-5"}>
           <p className={"text-xl"}>Email</p>
           <input
@@ -89,7 +89,7 @@ export default function RegisterPage() {
             required
           />
           <div className="justify-self-center bg-space-cadet m-10 px-2 rounded">
-            <input type={"submit"} />
+            <input type={"submit"}/>
           </div>
         </div>
       </form>
