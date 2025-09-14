@@ -90,7 +90,7 @@ app.post("/login", async (req, res) => {
     return new Response("Invalid email or password", { status: 400 });
   }
   const passwordHash = user[0].password_hash;
-  if (!await Bun.password.verify(password, passwordHash)) {
+  if (!(await Bun.password.verify(password, passwordHash))) {
     return new Response("Invalid email or password", { status: 401 });
   }
   console.log(user);
@@ -102,7 +102,8 @@ app.post("/login", async (req, res) => {
       "Set-Cookie": `jwt=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=172800`,
       "Content-Type": "application/json",
     },
-  });});
+  });
+});
 
 app.get("/my-db-info", async (req, res) => {
   const authHeader = req.headers.get("Authorization");
