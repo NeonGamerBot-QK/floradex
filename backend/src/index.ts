@@ -2,10 +2,16 @@ import { SQL } from "bun";
 import { App } from "./server";
 import { z } from "zod";
 import { SignJWT, jwtVerify } from "jose";
+import OpenAI from "openai";
+
 const env = process.env;
 const registerAndLoginBody = z.object({
   email: z.email().max(100),
   password: z.string().min(4).max(100),
+});
+
+const ai = new OpenAI({
+  apiKey: env.OPENAI_API_KEY,
 });
 
 // simple http server
@@ -15,7 +21,7 @@ const db = new SQL({
 });
 
 const createAuditLog = (action: string, metadata?: any, uid?: string) => {
-  db`INSERT INTO audit_logs (action, metadata, user_id) VALUES (${action}, ${metadata ? JSON.stringify(metadata) : null}, ${uid ? uid : null})`.catch(
+  return db`INSERT INTO audit_log (action, metadata, user_id) VALUES (${action}, ${metadata ? JSON.stringify(metadata) : null}, ${uid ? uid : null})`.catch(
     (e) => {
       console.error("Failed to create audit log:", e);
     },
@@ -130,8 +136,161 @@ app.get("/health", async () => {
   await db`SELECT 1`;
   return new Response("200");
 });
+app.get("/admin/audit-logs", async (req) => {
+  const queryParams = new URL(req.url).searchParams;
+  const aq = queryParams.get("auth_query");
+  if (!aq || (aq && aq !== env.ADMIN_AUTH_QUERY)) {
+    return new Response("Unauthorized", { status: 401 });
+  }
 
-app.listen(3000);
+  const limit = queryParams.get("limit")
+    ? parseInt(queryParams.get("limit")!)
+    : 50;
+  const offset = queryParams.get("offset")
+    ? parseInt(queryParams.get("offset")!)
+    : 0;
+
+  const logs = await db`
+        SELECT * FROM audit_log
+        LIMIT ${limit}
+        OFFSET ${offset}
+    `;
+
+  const rows = logs
+    .map(
+      (log) => `
+        <tr>
+            <td>${log.id}</td>
+            <td>${log.action}</td>
+            <td>${log.user_id}</td>
+            <td>${log.created_at}</td>
+        </tr>
+    `,
+    )
+    .join("");
+
+  const prevOffset = Math.max(offset - limit, 0);
+  const nextOffset = offset + limit;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Audit Logs</title>
+        <style>
+            body { font-family: sans-serif; padding: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+            th { background: #f4f4f4; }
+            .buttons { display: flex; gap: 10px; }
+        </style>
+    </head>
+    <body>
+        <h1>Audit Logs</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Action</th>
+                    <th>User ID</th>
+                    <th>Created At</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rows}
+            </tbody>
+        </table>
+        <div class="buttons">
+            <a href="/admin/audit-logs?limit=${limit}&offset=${prevOffset}&auth_query=${aq}">
+                <button ${offset === 0 ? "disabled" : ""}>Prev</button>
+            </a>
+            <a href="/admin/audit-logs?limit=${limit}&offset=${nextOffset}&auth_query=${aq}">
+                <button ${logs.length < limit ? "disabled" : ""}>Next</button>
+            </a>
+        </div>
+    </body>
+    </html>
+    `;
+
+  return new Response(html, {
+    headers: { "Content-Type": "text/html" },
+  });
+});
+
+app.post("/plantai", async (req) => {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+  const token = authHeader.split(" ")[1];
+  if (!token) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+  const payload = await verifyToken(token!);
+  if (!payload) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+  const user =
+    await db`SELECT id FROM users WHERE email = ${sanitizeInput(payload.email as string)}`;
+  if (user.length === 0) {
+    return new Response("User not found", { status: 404 });
+  }
+  const imageBase64 = await req.text();
+  const response = await ai.chat.completions.create({
+    model: "gpt-5",
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text:
+              "Identify the plant in this image." +
+              "Provide the most likely name of the plant as well as its scientific name." +
+              "Give your answer in the following format: (JSON)" +
+              "{" +
+              "name: <name>," +
+              "scientific_name: <scientific_name>," +
+              "areas_commonly_found_in: <areas_commonly_found_in>," +
+              "fun_fact_about_this_plant" +
+              "}." +
+              "Do not provide any other information apart from anything within the JSON." +
+              "Use as few tokens as possible." +
+              "Keep answer as short as possible, but detailed enough to still have all of the information requested.",
+          },
+          {
+            type: "image_url",
+            image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
+          },
+        ],
+      },
+    ],
+  });
+  const json = JSON.parse(response.choices[0]!.message!.content!);
+  // add sql record
+  // await db`INSERT INTO plant_requests (user_id, request, response) VALUES (${user[0].id}, ${imageBase64}, ${JSON.stringify(json)})`;
+  await db`
+  INSERT INTO plant_requests (
+    user_id,
+    plant_type,
+    name,
+    scientific_name,
+    areas_commonly_found_in,
+    fun_fact_about_this_plant
+  ) VALUES (
+    ${user[0].id},
+    ${"tree"}, -- or whatever plant_type is
+    ${json.name},
+    ${json.scientific_name},
+    ${json.areas_commonly_found_in},
+    ${json.fun_fact_about_this_plant}
+  )
+`;
+
+  return new Response(JSON.stringify(json), { status: 200 });
+});
+//@ts-ignore
+app.listen(process.env.PORT || 3000);
 console.log(`Server running on http://localhost:3000`);
 // audit log ts
 createAuditLog(`ServerStarted`, { starting_date: new Date().toISOString() });
