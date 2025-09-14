@@ -23,8 +23,9 @@ export default function Home() {
             Login
           </Link>
           <Link
-              className={"p-5 rounded-xl text-xl bg-mindaro text-space-cadet"}
-              href={"/register"}>
+            className={"p-5 rounded-xl text-xl bg-mindaro text-space-cadet"}
+            href={"/register"}
+          >
             Register
           </Link>
         </div>
